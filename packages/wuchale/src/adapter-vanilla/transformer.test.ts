@@ -356,3 +356,29 @@ test('Destructuring patterns in declarations', t => {
         ['There!'],
     )
 })
+
+test('User-defined function named plural', t => {
+    // A locally defined function that happens to be called `plural` is
+    // not the runtime plural helper. The adapter must leave its calls
+    // alone instead of cataloging an argument and appending a locale.
+    transformTest(
+        t,
+        getOutput(ts`
+            function plural(count: number, noun: string): string {
+                return count + ' ' + noun
+            }
+            function m(n: number) {
+                return plural(n, 'record')
+            }
+        `),
+        ts`
+            function plural(count: number, noun: string): string {
+                return count + ' ' + noun
+            }
+            function m(n: number) {
+                return plural(n, 'record')
+            }
+        `,
+        [],
+    )
+})
