@@ -240,3 +240,37 @@ test('Nested and mixed', async (t: TestContext) => {
         ['Hello and <0>welcome to <0>the app {0}</0></0>!'],
     )
 })
+
+test('Conditional with copy-only element sibling', async t => {
+    // A copy-only element sibling next to an inline conditional whose
+    // consequent is a leaf copy element must compile to plain lookups.
+    // Emitting the sibling as a nested x(_w_ctx_) call without binding
+    // _w_ctx_ throws ReferenceError at render.
+    transformTest(
+        t,
+        getOutput(tsx`
+        function Foo({ cond }) {
+            return <div>
+                <p>Some intro copy here</p>
+                {cond ? (
+                    <p>Empty note here</p>
+                ) : null}
+            </div>
+        }
+    `),
+        tsx`
+            import { _w_load_, _w_load_rx_ } from "./loader.js"
+            import W_tx_ from "@wuchale/jsx/runtime.jsx"
+            function Foo({ cond }) {
+                const _w_runtime_ = _w_load_rx_();
+                return <div>
+                    <p>{_w_runtime_(0)}</p>
+                    {cond ? (
+                        <p>{_w_runtime_(1)}</p>
+                    ) : null}
+                </div>
+            }
+    `,
+        ['Some intro copy here', 'Empty note here'],
+    )
+})
