@@ -356,3 +356,32 @@ test('Destructuring patterns in declarations', t => {
         ['There!'],
     )
 })
+
+test('Call argument keys stay at the call site', t => {
+    // A key passed to a user-defined runtime helper must be cataloged
+    // without rewriting the call: replacing the source string with an
+    // argument-less lookup breaks the helper's contract (it resolves the
+    // source itself) and drops the interpolation arguments.
+    transformTest(
+        t,
+        getOutput(ts`
+            function trSource(s: string): string {
+                return s
+            }
+            function m(name: string) {
+                return trSource('Hello {0} world', name)
+            }
+        `),
+        ts`
+            import { _w_load_, _w_load_rx_ } from "./loader.js"
+            function trSource(s: string): string {
+                return s
+            }
+            function m(name: string) {
+                const _w_runtime_ = _w_load_();
+                return trSource('Hello {0} world', name)
+            }
+        `,
+        ['Hello {0} world'],
+    )
+})
